@@ -1,0 +1,32 @@
+{
+  "name": "proyecto-2---social-media",
+  "version": "1.0.0",
+  "description": "El presente proyecto de backend consiste en el desarrollo de una API REST para una red social, combinando los conocimientos adquiridos en Node.js, Express y MongoDB/Mongoose.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maiderspb/PROYECTO-2---social-media.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maiderspb/PROYECTO-2---social-media/issues"
+  },
+  "homepage": "https://github.com/maiderspb/PROYECTO-2---social-media#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.2",
+    "multer": "^2.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
