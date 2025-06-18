@@ -1,7 +1,6 @@
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 
-// Crear post
 exports.createPost = async (req, res) => {
   const { title, content, image } = req.body;
 
@@ -28,7 +27,6 @@ exports.createPost = async (req, res) => {
   }
 };
 
-// Actualizar post
 exports.updatePost = async (req, res) => {
   const { id } = req.params;
   try {
@@ -44,7 +42,6 @@ exports.updatePost = async (req, res) => {
   }
 };
 
-// Eliminar post
 exports.deletePost = async (req, res) => {
   const { id } = req.params;
   try {
@@ -59,7 +56,6 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-// Obtener todos los posts con usuarios y comentarios
 exports.getAllPosts = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
@@ -81,7 +77,6 @@ exports.getAllPosts = async (req, res) => {
   }
 };
 
-// Buscar post por nombre
 exports.searchByName = async (req, res) => {
   const { title } = req.query;
   try {
@@ -94,7 +89,6 @@ exports.searchByName = async (req, res) => {
   }
 };
 
-// Buscar post por ID
 exports.getById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
@@ -108,7 +102,6 @@ exports.getById = async (req, res) => {
   }
 };
 
-// Dar like
 exports.likePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -122,7 +115,6 @@ exports.likePost = async (req, res) => {
   }
 };
 
-// Quitar like
 exports.unlikePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
