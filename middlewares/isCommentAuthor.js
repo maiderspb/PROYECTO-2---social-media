@@ -1,26 +1,20 @@
-const Comment = require("../models/Comment");
+const jwt = require("jsonwebtoken");
 
-const isCommentAuthor = async (req, res, next) => {
+module.exports = function (req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Token missing" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
-    const userId = req.user?.id || req.user?._id;
-    if (!userId) return res.status(401).json({ message: "No autenticado" });
-
-    const commentId = req.params.commentId || req.params.id;
-    const comment = await Comment.findById(commentId);
-    if (!comment)
-      return res.status(404).json({ message: "Comentario no encontrado" });
-
-    if (comment.user.toString() !== userId.toString())
-      return res.status(403).json({ message: "Este comentario no es tuyo" });
-
-    req.comment = comment;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    console.log("Usuario autenticado:", req.user);
     next();
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Error comprobando autoría", error: error.message });
+  } catch (err) {
+    res.status(401).json({ message: "Token inválido" });
   }
 };
-
-module.exports = isCommentAuthor;

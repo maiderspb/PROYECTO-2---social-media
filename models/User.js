@@ -8,14 +8,19 @@ const userSchema = new mongoose.Schema(
       unique: true,
     },
     email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+     type: String,
+     match: [/.+\@.+\..+/, 'Este correo no es válido'],
+     unique: true,
+     required: [true, 'Por favor rellena tu correo'],
+   },
+
     password: {
       type: String,
       required: true,
     },
+    image: { type: String },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     tokens: {
       type: [String],
       default: [],

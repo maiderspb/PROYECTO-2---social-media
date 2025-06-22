@@ -2,7 +2,10 @@ const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 
 exports.createPost = async (req, res) => {
-  const { title, content, image } = req.body;
+  console.log("req.body:", req.body);
+  console.log("req.file:", req.file);
+
+  const { title, content } = req.body;
 
   if (!title || !title.trim()) {
     return res.status(400).json({ message: "El campo 'title' es obligatorio" });
@@ -17,7 +20,7 @@ exports.createPost = async (req, res) => {
     const post = new Post({
       title: title.trim(),
       content: content.trim(),
-      image,
+      image: req.file ? req.file.filename : undefined,
       user: req.user.id,
     });
     await post.save();
@@ -34,7 +37,13 @@ exports.updatePost = async (req, res) => {
     if (!post || post.user.toString() !== req.user.id)
       return res.status(403).json({ message: "Unauthorized" });
 
-    Object.assign(post, req.body);
+    if (req.body.title) post.title = req.body.title.trim();
+    if (req.body.content) post.content = req.body.content.trim();
+
+    if (req.file) {
+      post.image = req.file.filename;
+    }
+
     await post.save();
     res.json(post);
   } catch (err) {
@@ -54,7 +63,7 @@ exports.deletePost = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-};
+};  
 
 exports.getAllPosts = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -66,7 +75,10 @@ exports.getAllPosts = async (req, res) => {
       .populate("user", "username email")
       .populate({
         path: "comments",
-        populate: { path: "user", select: "username" },
+        populate: {
+          path: "user",
+          select: "username email",
+        },
       })
       .skip(skip)
       .limit(limit);
