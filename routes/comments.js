@@ -6,7 +6,6 @@ const authentication = require("../middlewares/authentication");
 const verifyPostAndComment = require("../middlewares/verifyPostAndComment");
 const { like, removeLike } = require("../controllers/LikeComment");
 
-// Configuración de Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -18,7 +17,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Rutas
 router.post(
   "/posts/:postId/comments",
   authentication,
@@ -30,15 +28,15 @@ router.get("/:id", CommentController.getCommentById);
 router.post(
   "/:postId/comments/:commentId/like",
   authentication,
-  verifyPostAndComment, // Verifica que el post y comentario existan
-  like // Asegúrate de que 'like' es una función válida
+  verifyPostAndComment,
+  like
 );
 
 router.delete(
   "/:postId/comments/:commentId/like",
   authentication,
-  verifyPostAndComment, // Verifica que el post y comentario existan
-  removeLike // Asegúrate de que 'removeLike' es una función válida
+  verifyPostAndComment,
+  removeLike
 );
 
 module.exports = router;

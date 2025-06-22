@@ -113,11 +113,9 @@ router.put(
           .json({ message: "El campo 'text' es obligatorio" });
       }
 
-      // Verificar que el post existe
       const post = await Post.findById(postId);
       if (!post) return res.status(404).json({ error: "Post no encontrado" });
 
-      // Buscar comentario y actualizar
       const updatedData = { text: text.trim(), updatedAt: new Date() };
 
       if (req.file) {
@@ -153,17 +151,14 @@ router.delete(
     try {
       const { postId, commentId } = req.params;
 
-      // Verifica que el post existe
       const post = await Post.findById(postId);
       if (!post) return res.status(404).json({ message: "Post no encontrado" });
 
-      // Borra el comentario
       const deletedComment = await Comment.findByIdAndDelete(commentId);
       if (!deletedComment) {
         return res.status(404).json({ message: "Comentario no encontrado" });
       }
 
-      // Quita el comentario del arreglo comments del post
       post.comments = post.comments.filter((id) => id.toString() !== commentId);
       await post.save();
 
@@ -191,31 +186,28 @@ router.post(
     const { postId, commentId } = req.params;
 
     try {
-      // Verificar si el post existe
       const post = await Post.findById(postId);
       if (!post) {
-        return res.status(404).json({ message: "Post not found" }); // Si no existe el post
+        return res.status(404).json({ message: "Post not found" });
       }
 
-      // Verificar si el comentario existe dentro del post
       const comment = post.comments.find(
         (comment) => comment.toString() === commentId
-      ); // Aquí verificamos que comment exista y sea válido
+      );
       if (!comment) {
-        return res.status(404).json({ message: "Comment not found" }); // Si no existe el comentario en el post
+        return res.status(404).json({ message: "Comment not found" });
       }
 
-      // Lógica para dar like
-      comment.likes = comment.likes || 0; // Asegúrate de que "likes" exista antes de incrementarlo
-      comment.likes += 1; // Incrementa el contador de likes
+      comment.likes = comment.likes || 0;
+      comment.likes += 1;
 
-      await post.save(); // Guarda los cambios en el post
+      await post.save();
 
       return res
         .status(200)
-        .json({ message: "Like added", likes: comment.likes }); // Responde con el éxito y el nuevo número de likes
+        .json({ message: "Like added", likes: comment.likes });
     } catch (error) {
-      console.error(error); // Log para ver los errores
+      console.error(error);
       return res
         .status(500)
         .json({ message: "Error al dar like", error: error.message });
