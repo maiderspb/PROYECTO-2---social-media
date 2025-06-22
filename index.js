@@ -29,8 +29,9 @@ app.delete(
 );
 
 const mongoURI = process.env.MONGO_URI;
+
 mongoose
-  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(mongoURI)
   .then(() => {
     console.log("✅ MongoDB conectado correctamente");
 
