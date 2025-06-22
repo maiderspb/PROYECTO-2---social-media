@@ -139,8 +139,7 @@ Multer 📁
 
 ### 1. Clonar el repositorio
 
-git clone https://github.com/tu-usuario/social-media-api.git
-cd social-media-api
+git clone https://github.com/maiderspb/PROYECTO-2---social-media.git
 
 ### 2. Instalar dependencias
 
@@ -150,11 +149,12 @@ npm install
 
 Crea un archivo .env con las siguientes variables:
 
-PORT=5000
-MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/nombreDB
-JWT_SECRET=tu_secreto_jwt
-EMAIL_USER=tu_email@example.com
-EMAIL_PASS=tu_password_email
+- PORT=5000
+
+- MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/nombreDB
+
+- JWT_SECRET=tu_secreto_jwt
+
 
 ### 4. Ejecutar la aplicación
 
