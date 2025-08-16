@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema(
     image: { type: String },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
     tokens: {
       type: [String],
       default: [],

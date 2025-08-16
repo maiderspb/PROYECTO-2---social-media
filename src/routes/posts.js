@@ -9,15 +9,21 @@ const upload = require("../middlewares/upload");
 const isAuthor = require("../middlewares/isAuthor");
 const isCommentAuthor = require("../middlewares/isCommentAuthor");
 
+router.get("/liked/:userId", authentication, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const likedPosts = await Post.find({ likes: userId });
+    res.json(likedPosts); 
+  } catch (err) {
+    console.error("Error al obtener posts liked:", err);
+    res.status(500).json({ message: "Error interno" });
+  }
+});
+
 router.post("/", authentication, upload.single("image"), controller.createPost);
 
-router.put(
-  "/:id",
-  authentication,
-  isAuthor,
-  upload.single("image"),
-  controller.updatePost
-);
+router.put("/:id", authentication, isAuthor, upload.single("image"), controller.updatePost);
 
 router.delete("/:id", authentication, isAuthor, controller.deletePost);
 
@@ -35,22 +41,19 @@ router.post(
   authentication,
   upload.single("image"),
   async (req, res) => {
-    console.log("➡️ Ruta PUT /api/posts/:postId/comments/:commentId alcanzada");
     try {
       const { postId } = req.params;
       const { text } = req.body;
       const userId = req.user.id;
 
       if (!text || !text.trim()) {
-        return res
-          .status(400)
-          .json({ message: "El campo 'text' es obligatorio" });
+        return res.status(400).json({ message: "El campo 'text' es obligatorio" });
       }
 
       const post = await Post.findById(postId);
       if (!post) return res.status(404).json({ error: "Post no encontrado" });
 
-      const commentData = { user: userId, text: text.trim() };
+      const commentData = { user: userId, text: text.trim(), post: postId };
       if (req.file) {
         commentData.image = req.file.filename;
       }
@@ -71,6 +74,38 @@ router.post(
     }
   }
 );
+
+router.post('/:postId/comments/:commentId/like', async (req, res) => {
+  const { commentId } = req.params;
+  const userId = req.user?.id || req.body.userId; 
+
+  try {
+    const comment = await Comment.findById(commentId);
+    if (!comment) return res.status(404).json({ message: 'Comentario no encontrado' });
+
+    const alreadyLiked = comment.likes.includes(userId);
+
+    if (alreadyLiked) {
+      comment.likes.pull(userId);
+    } else {
+      comment.likes.push(userId);
+    }
+
+    await comment.save();
+
+    res.json({
+      _id: comment._id,
+      text: comment.text,
+      likes: comment.likes.length, 
+      user: comment.user,
+    });
+  } catch (err) {
+    console.error('Error al dar like al comentario:', err);
+    res.status(500).json({ message: 'Error interno al dar like' });
+  }
+});
+
+
 router.post("/:postId/followers", authentication, async (req, res) => {
   try {
     const { postId } = req.params;
@@ -91,9 +126,7 @@ router.post("/:postId/followers", authentication, async (req, res) => {
     res.status(201).json({ message: "Post seguido correctamente" });
   } catch (err) {
     console.error("Error al seguir post:", err);
-    res
-      .status(500)
-      .json({ error: "Error al seguir post", details: err.message });
+    res.status(500).json({ error: "Error al seguir post", details: err.message });
   }
 });
 
@@ -108,16 +141,13 @@ router.put(
       const { text } = req.body;
 
       if (!text || !text.trim()) {
-        return res
-          .status(400)
-          .json({ message: "El campo 'text' es obligatorio" });
+        return res.status(400).json({ message: "El campo 'text' es obligatorio" });
       }
 
       const post = await Post.findById(postId);
       if (!post) return res.status(404).json({ error: "Post no encontrado" });
 
       const updatedData = { text: text.trim(), updatedAt: new Date() };
-
       if (req.file) {
         updatedData.image = req.file.filename;
       }
@@ -179,40 +209,31 @@ router.post(
   CommentController.like
 );
 
-router.post(
-  "/:postId/comments/:commentId/like",
-  authentication,
-  async (req, res) => {
-    const { postId, commentId } = req.params;
+router.post('/posts/:postId/comments/:commentId/like', async (req, res) => {
+  const { postId, commentId } = req.params;
+  const post = await Post.findById(postId);
+  const comment = post.comments.id(commentId);
+  comment.likes = (comment.likes || 0) + 1;
+  await post.save();
+  res.json(comment);
+});
 
-    try {
-      const post = await Post.findById(postId);
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
+router.get("/liked/:userId", authentication, async (req, res) => {
+  const { userId } = req.params;
 
-      const comment = post.comments.find(
-        (comment) => comment.toString() === commentId
-      );
-      if (!comment) {
-        return res.status(404).json({ message: "Comment not found" });
-      }
+  try {
+    const likedPosts = await Post.find({ likes: userId })
+      .populate("user", "authorName") 
+      .populate({
+        path: "comments",
+        populate: { path: "user", select: "authorName" }, 
+      });
 
-      comment.likes = comment.likes || 0;
-      comment.likes += 1;
-
-      await post.save();
-
-      return res
-        .status(200)
-        .json({ message: "Like added", likes: comment.likes });
-    } catch (error) {
-      console.error(error);
-      return res
-        .status(500)
-        .json({ message: "Error al dar like", error: error.message });
-    }
+    res.json(likedPosts);
+  } catch (err) {
+    console.error("Error al obtener posts liked:", err);
+    res.status(500).json({ message: "Error interno" });
   }
-);
+});
 
 module.exports = router;

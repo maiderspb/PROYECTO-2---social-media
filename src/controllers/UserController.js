@@ -9,16 +9,18 @@ const UserController = {
     try {
       const { username, email, password } = req.body;
       const image = req.file ? req.file.filename : null;
+const bcrypt = require('bcryptjs');
 
-      const newUser = new User({
-        username,
-        email,
-        password,
-        image,
-        confirmed: false,
-      });
-      await newUser.save();
+const hashedPassword = await bcrypt.hash(password, 10);
 
+const newUser = new User({
+  username,
+  email,
+  password: hashedPassword, 
+  image,
+  confirmed: false,
+});
+await newUser.save();
       const confirmationToken = jwt.sign(
         { id: newUser._id, email: newUser.email },
         process.env.JWT_SECRET_CONFIRM || "secretConfirmKey",
@@ -59,30 +61,39 @@ const UserController = {
     }
   },
 
-  update: async (req, res) => {
-    try {
-      const updates = req.body;
-      if (req.file) {
-        updates.image = req.file.filename;
-      }
+update: async (req, res) => {
+  console.log("Archivo subido:", req.file); 
 
-      const updatedUser = await User.findByIdAndUpdate(req.params.id, updates, {
-        new: true,
-      });
+  try {
+    const updates = {};
 
-      if (!updatedUser)
-        return res.status(404).json({ message: "Usuario no encontrado" });
+    if (req.body.username) updates.username = req.body.username;
+    if (req.body.email) updates.email = req.body.email;
 
-      res
-        .status(200)
-        .json({ message: "Usuario actualizado", user: updatedUser });
-    } catch (err) {
-      res
-        .status(500)
-        .json({ message: "Error al actualizar usuario", error: err.message });
+    if (req.body.password) {
+      updates.password = await bcrypt.hash(req.body.password, 10);
     }
-  },
 
+    if (req.file) {
+      updates.image = req.file.filename;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
+
+    if (!updatedUser)
+      return res.status(404).json({ message: "Usuario no encontrado" });
+
+    const { password, ...userWithoutPassword } = updatedUser.toObject();
+
+    res.status(200).json({
+      message: "Usuario actualizado",
+      user: userWithoutPassword,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al actualizar usuario", error: err.message });
+  }
+},
   getProfile: async (req, res) => {
     try {
       const userId = req.user.id;
@@ -143,34 +154,33 @@ const UserController = {
   },
 
   confirmAccount: async (req, res) => {
-    try {
-      const { token } = req.params;
+  try {
+    const { token } = req.params;
 
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET_CONFIRM || "secretConfirmKey"
-      );
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET_CONFIRM || "secretConfirmKey"
+    );
 
-      const user = await User.findById(decoded.id);
-      if (!user) {
-        return res.status(404).json({ message: "Usuario no encontrado" });
-      }
+    const user = await User.findById(decoded.id);
+    if (!user)
+      return res.status(404).json({ message: "Usuario no encontrado" });
 
-      if (user.confirmed) {
-        return res.status(400).json({ message: "La cuenta ya fue confirmada" });
-      }
-
-      user.confirmed = true;
-      await user.save();
-
-      res.status(200).json({ message: "Cuenta confirmada correctamente" });
-    } catch (error) {
-      res.status(400).json({
-        message: "Token inválido o expirado",
-        error: error.message,
-      });
+    if (user.confirmed) {
+      return res.status(400).json({ message: "La cuenta ya fue confirmada" });
     }
-  },
+
+    user.confirmed = true;
+    await user.save();
+
+    res.status(200).json({ message: "Cuenta confirmada correctamente" });
+  } catch (error) {
+    res.status(400).json({
+      message: "Token inválido o expirado",
+      error: error.message,
+    });
+  }
+},
 
   login: async (req, res) => {
     const { email, password } = req.body;
@@ -191,18 +201,22 @@ const UserController = {
       if (!isMatch)
         return res.status(401).json({ message: "Contraseña incorrecta" });
 
-      const token = jwt.sign(
-        { id: user._id },
-        process.env.JWT_SECRET || "yourSecret",
-        {
-          expiresIn: "1h",
-        }
-      );
+    const token = jwt.sign(
+  { id: user._id, username: user.username, email: user.email },
+  process.env.JWT_SECRET || 'yourSecret',
+  { expiresIn: '1h' }
+);
 
-      res.status(200).json({
-        token,
-        user: { id: user._id, username: user.username },
-      });
+res.status(200).json({
+  token,
+  user: {
+    id: user._id,
+    _id: user._id, 
+    username: user.username,
+    email: user.email,
+  },
+});
+
     } catch (err) {
       res.status(500).json({
         message: "Error al iniciar sesión",
@@ -230,3 +244,6 @@ const UserController = {
 };
 
 module.exports = UserController;
+
+
+

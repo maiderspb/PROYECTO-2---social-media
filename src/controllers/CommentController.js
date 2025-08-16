@@ -3,27 +3,85 @@ const Comment = require("../models/Comment");
 
 const CommentController = {
   create: async (req, res) => {
+    console.log("req.params:", req.params);
+    console.log("req.body:", req.body);
+    console.log("req.user:", req.user);
+
     try {
       const { postId } = req.params;
       const { text } = req.body;
-      const userId = req.user.id;
+      const userId = req.user?.id;
 
-      const post = await Post.findById(postId);
-      if (!post) return res.status(404).json({ message: "Post no encontrado" });
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
 
-      const comment = new Comment({ user: userId, text, post: postId });
+      const comment = new Comment({
+        text,
+        post: postId,
+        user: userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
       await comment.save();
-
-      post.comments.push(comment._id);
-      await post.save();
 
       res.status(201).json({ message: "Comentario creado", comment });
     } catch (err) {
-      res
-        .status(500)
-        .json({ message: "Error al crear comentario", error: err.message });
+      console.error("Error creando comentario:", err);
+      res.status(500).json({ message: "Error al crear comentario", error: err.message });
     }
   },
+
+update: async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const { text } = req.body;
+    const userId = req.user?.id;
+
+    if (!text || text.trim() === "") {
+      return res.status(400).json({ message: "El texto del comentario es obligatorio" });
+    }
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) return res.status(404).json({ message: "Comentario no encontrado" });
+
+    if (comment.user.toString() !== userId) {
+      return res.status(403).json({ message: "No tienes permiso para editar este comentario" });
+    }
+
+    comment.text = text;
+    comment.updatedAt = new Date();
+
+    await comment.save();
+
+    res.status(200).json({ message: "Comentario actualizado", comment });
+  } catch (err) {
+    console.error("Error actualizando comentario:", err);
+    res.status(500).json({ message: "Error al actualizar comentario", error: err.message });
+  }
+},
+
+  delete: async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user?.id;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) return res.status(404).json({ message: "Comentario no encontrado" });
+
+    if (comment.user.toString() !== userId) {
+      return res.status(403).json({ message: "No tienes permiso para eliminar este comentario" });
+    }
+
+    await comment.deleteOne();
+
+    res.status(200).json({ message: "Comentario eliminado" });
+  } catch (err) {
+    console.error("Error eliminando comentario:", err);
+    res.status(500).json({ message: "Error al eliminar comentario", error: err.message });
+  }
+},
 
   handleLike: async (req, res, action) => {
     try {
@@ -61,15 +119,11 @@ const CommentController = {
       );
 
       if (action === "like" && isLiked) {
-        return res
-          .status(400)
-          .json({ message: "Ya diste like a este comentario" });
+        return res.status(400).json({ message: "Ya diste like a este comentario" });
       }
 
       if (action === "unlike" && !isLiked) {
-        return res
-          .status(400)
-          .json({ message: "Aún no has dado like a este comentario" });
+        return res.status(400).json({ message: "Aún no has dado like a este comentario" });
       }
 
       if (action === "like") {
@@ -94,6 +148,15 @@ const CommentController = {
       });
     }
   },
+
+  getAllComments: async (req, res) => {
+  try {
+    const comments = await Comment.find().populate('user');
+    res.status(200).json({ comments });
+  } catch (err) {
+    res.status(500).json({ message: "Error al obtener comentarios", error: err.message });
+  }
+},
 
   like: (req, res) => {
     return CommentController.handleLike(req, res, "like");
@@ -145,24 +208,25 @@ const CommentController = {
 
       res.status(200).json({ message: "Comentario eliminado" });
     } catch (err) {
-      res
-        .status(500)
-        .json({ message: "Error al eliminar comentario", error: err.message });
+      res.status(500).json({ message: "Error al eliminar comentario", error: err.message });
     }
   },
 };
 
 const getCommentById = async (req, res) => {
   try {
-    const comment = await Comment.findById(req.params.id);
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID inválido" });
+    }
+
+    const comment = await Comment.findById(id);
     if (!comment) {
       return res.status(404).json({ message: "Comentario no encontrado" });
     }
     res.status(200).json(comment);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error al obtener el comentario", error: err.message });
+    res.status(500).json({ message: "Error al obtener el comentario", error: err.message });
   }
 };
 

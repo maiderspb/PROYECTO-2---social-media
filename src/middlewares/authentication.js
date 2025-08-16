@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 module.exports = function (req, res, next) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Token missing or malformed" });
   }
 
@@ -18,19 +18,18 @@ module.exports = function (req, res, next) {
     req.user = decoded;
 
     if (process.env.NODE_ENV === "development") {
-      console.log("Usuario autenticado:", req.user);
+      console.log(`✅ Usuario autenticado: ${req.user.username} (${req.user.email})`);
     }
 
-    next();
+    next(); 
   } catch (err) {
-    console.error("Error en la autenticación:", err.message);
+    console.error("❌ Error en autenticación:", err.message);
 
     if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token expirado" });
+      return res.status(401).json({ type: "TOKEN_EXPIRED", message: "Token expirado" });
     }
-
     if (err.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Token inválido" });
+      return res.status(401).json({ type: "TOKEN_INVALID", message: "Token inválido" });
     }
 
     return res.status(500).json({ message: "Error en la autenticación" });
