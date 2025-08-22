@@ -12,34 +12,20 @@ exports.like = async (req, res) => {
       return res.status(404).json({ message: "Comentario no encontrado" });
     }
 
-    console.log("Comentario:", comment);
-    console.log("Post asociado:", comment.post);
-
-    if (!comment.post) {
-      return res
-        .status(400)
-        .json({ message: "Comentario no tiene un post asociado" });
+    if (!comment.post || !comment.post._id.equals(postId)) {
+      return res.status(400).json({ message: "El comentario no pertenece a este post" });
     }
 
-    if (comment.post.toString() !== postId) {
-      return res
-        .status(400)
-        .json({ message: "El comentario no pertenece a este post" });
-    }
+    if (!Array.isArray(comment.likes)) comment.likes = [];
 
-    if (comment.likes.includes(userId)) {
-      return res
-        .status(400)
-        .json({ message: "Ya has dado like a este comentario" });
+    if (comment.likes.some((id) => id.equals(userId))) {
+      return res.status(400).json({ message: "Ya has dado like a este comentario" });
     }
 
     comment.likes.push(userId);
     await comment.save();
 
-    return res.status(200).json({
-      message: "Like agregado correctamente",
-      likes: comment.likes,
-    });
+    return res.status(200).json(comment);
   } catch (error) {
     console.error("Error al agregar like:", error);
     return res.status(500).json({ message: "Error al agregar like" });
@@ -92,4 +78,3 @@ exports.removeLike = async (req, res) => {
     return res.status(500).json({ message: "Error al eliminar like" });
   }
 };
-

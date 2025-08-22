@@ -75,15 +75,19 @@ router.post(
   }
 );
 
-router.post('/:postId/comments/:commentId/like', async (req, res) => {
+router.post('/:postId/comments/:commentId/like', authentication, async (req, res) => {
   const { commentId } = req.params;
-  const userId = req.user?.id || req.body.userId; 
+  const userId = req.user.id;
 
   try {
     const comment = await Comment.findById(commentId);
-    if (!comment) return res.status(404).json({ message: 'Comentario no encontrado' });
+    if (!comment) {
+      return res.status(404).json({ message: 'Comentario no encontrado' });
+    }
 
-    const alreadyLiked = comment.likes.includes(userId);
+    if (!Array.isArray(comment.likes)) comment.likes = [];
+
+    const alreadyLiked = comment.likes.some(id => id.toString() === userId);
 
     if (alreadyLiked) {
       comment.likes.pull(userId);
@@ -91,21 +95,14 @@ router.post('/:postId/comments/:commentId/like', async (req, res) => {
       comment.likes.push(userId);
     }
 
-    await comment.save();
+    await comment.save({ validateBeforeSave: false });
 
-    res.json({
-      _id: comment._id,
-      text: comment.text,
-      likes: comment.likes.length, 
-      user: comment.user,
-    });
+    return res.json(comment);
   } catch (err) {
     console.error('Error al dar like al comentario:', err);
-    res.status(500).json({ message: 'Error interno al dar like' });
+    res.status(500).json({ message: 'Error interno al dar like', details: err.message });
   }
 });
-
-
 router.post("/:postId/followers", authentication, async (req, res) => {
   try {
     const { postId } = req.params;

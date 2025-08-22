@@ -55,18 +55,23 @@ exports.updatePost = async (req, res) => {
 exports.deletePost = async (req, res) => {
   console.log('Eliminar post ID:', req.params.id);
   console.log('Usuario que solicita:', req.user.id);
-  
+
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post no encontrado" });
 
-    await post.remove();
+    if (post.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    await post.deleteOne();
+
     res.json({ message: "Post eliminado correctamente" });
   } catch (error) {
-  console.error("Error al eliminar post:", error);
-  res.status(500).json({ message: "Error al eliminar post", error: error.message });
-}
-}; 
+    console.error("Error al eliminar post:", error);
+    res.status(500).json({ message: "Error al eliminar post", error: error.message });
+  }
+};
 
 exports.getAllPosts = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -140,4 +145,3 @@ exports.unlikePost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-

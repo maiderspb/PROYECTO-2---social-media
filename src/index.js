@@ -6,12 +6,16 @@ const cors = require("cors");
 const port = process.env.PORT || 3000;
 const userRoutes = require("./routes/auth");
 const path = require("path");
-
 const swaggerUI = require("swagger-ui-express");
 const docs = require("./docs/index.js");
+
 app.use(cors());
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
+
 app.use("/api/users", userRoutes);
 app.use(
   "/api/docs",
@@ -32,7 +36,6 @@ const commentRoutes = require("./routes/comments");
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
-
 
 app.post(
   "/api/posts/:postId/comments/:commentId/like",
@@ -60,4 +63,3 @@ mongoose
   .catch((err) => {
     console.error("❌ Error de conexión a MongoDB:", err);
   });
-
