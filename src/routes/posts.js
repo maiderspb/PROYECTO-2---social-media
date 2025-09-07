@@ -9,6 +9,7 @@ const upload = require("../middlewares/upload");
 const isAuthor = require("../middlewares/isAuthor");
 const isCommentAuthor = require("../middlewares/isCommentAuthor");
 
+
 router.get("/liked/:userId", authentication, async (req, res) => {
   const { userId } = req.params;
 
@@ -20,6 +21,8 @@ router.get("/liked/:userId", authentication, async (req, res) => {
     res.status(500).json({ message: "Error interno" });
   }
 });
+
+router.delete("/:id/like", authentication, controller.unlikePost);
 
 router.post("/", authentication, upload.single("image"), controller.createPost);
 
