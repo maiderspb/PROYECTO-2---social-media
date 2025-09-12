@@ -22,6 +22,8 @@ router.get("/liked/:userId", authentication, async (req, res) => {
   }
 });
 
+router.delete("/:id/like", authentication, controller.unlikePost);
+
 router.post("/", authentication, upload.single("image"), controller.createPost);
 
 router.put("/:id", authentication, isAuthor, upload.single("image"), controller.updatePost);
